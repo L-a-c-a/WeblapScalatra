@@ -1,6 +1,7 @@
 package com.github.laca.w
 
 import org.scalatra._
+import scala.util.chaining._  //tap miatt
 
 // http://scalatra.org/guides/2.3/formats/json.html
 // JSON-related libraries
@@ -39,8 +40,11 @@ class MyScalatraServlet extends ScalatraServlet  with JacksonJsonSupport with Co
   get("/lap")
   {
     /**/ println(s"url=${params("url")} tip=${params("tip")}")
-    //"""{"lap": "semmi"}"""
-    Lap(params).o //feldolg
+    Lap(params)/*.tap(_.cim = "ez a címe")*/.o
+    //  tap nélkül:
+    //val l = Lap(params)
+    //l.cim = "ez a címe"
+    //l.o
   }
 
 }
