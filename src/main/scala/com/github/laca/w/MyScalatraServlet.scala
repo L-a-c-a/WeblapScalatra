@@ -10,7 +10,7 @@ import org.json4s.jackson.JsonMethods._
 // JSON handling support from Scalatra
 import org.scalatra.json._
 
-class MyScalatraServlet extends ScalatraServlet  with JacksonJsonSupport
+class MyScalatraServlet extends ScalatraServlet  with JacksonJsonSupport with CorsSupport
 {
   // Sets up automatic case class to JSON output serialization, required by
   // the JValueResult trait.
@@ -19,6 +19,14 @@ class MyScalatraServlet extends ScalatraServlet  with JacksonJsonSupport
   before() 
   {
     contentType = formats("json")
+    //response.setHeader("Access-Control-Allow-Origin", "http://localhost:4201");
+    response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
+
+    println (s"----------${java.time.Instant.now}----------")
+    //**/println(request.getHeader("Access-Control-Request-Headers"))   //null
+    /**/println(request.getHeader("Origin"))
+    println (multiParams)
+    println (request.getRequestURL +"?"+ request.getQueryString)
   }
   
   get("/") {
@@ -27,5 +35,12 @@ class MyScalatraServlet extends ScalatraServlet  with JacksonJsonSupport
 
   get("/konf")
   { """{"konf": "érték"}"""}
+
+  get("/lap")
+  {
+    /**/ println(s"url=${params("url")} tip=${params("tip")}")
+    //"""{"lap": "semmi"}"""
+    Lap(params).o //feldolg
+  }
 
 }
