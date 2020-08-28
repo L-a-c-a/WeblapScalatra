@@ -1,7 +1,7 @@
 package com.github.laca.w
 
+//import util.chaining._  //tap miatt  (sorrend nem mindegy, mert az org.scalatra -nak is van .util -ja - vagy scala.util....-t kell írni)
 import org.scalatra._
-import scala.util.chaining._  //tap miatt
 
 // http://scalatra.org/guides/2.3/formats/json.html
 // JSON-related libraries
