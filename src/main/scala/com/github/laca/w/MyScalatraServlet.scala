@@ -47,4 +47,9 @@ class MyScalatraServlet extends ScalatraServlet  with JacksonJsonSupport with Co
     //l.o
   }
 
+  get("/lapmuv")
+  {
+    Lap.muv(params).o
+  }
+
 }
