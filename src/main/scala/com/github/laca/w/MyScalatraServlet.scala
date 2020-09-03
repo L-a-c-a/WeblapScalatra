@@ -52,4 +52,10 @@ class MyScalatraServlet extends ScalatraServlet  with JacksonJsonSupport with Co
     Lap.muv(params).o
   }
 
+  get("/drmuv")
+  {
+    SeRemKliens.muv(params)
+  }
+
+
 }

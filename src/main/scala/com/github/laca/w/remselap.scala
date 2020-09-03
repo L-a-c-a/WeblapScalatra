@@ -1,7 +1,5 @@
 package com.github.laca.w
 
-import org.openqa.selenium.remote.RemoteWebDriver
-
 // RemoteWebServer-t használó SeLap
 
 //trait RemSeLapT extends SeLap { }   //hátha kell (nem biztos)
@@ -37,24 +35,8 @@ class RemSeLap(override val pURL: String)  extends SeLap(pURL) //with RemSeLapT
 }
 
 object RemSeLap
-{
-  private var drOpt: Option[RemoteWebDriver] = None
-  def dr: RemoteWebDriver =
-  {
-    if (drOpt == None)
-    { println("dr nyit")
-      drOpt = Some(SeRemKliens())
-    }
-    drOpt.get
-  }
-
-  def drClose = 
-  {
-    dr.quit
-    drOpt = None
-    println("dr csuk")
-  }
-
-  def fuggoSeTip = if (drOpt==None) "" else KONFIG.konf.seTip
-
+{ //nem tudtam eldönteni, hol legyenek; lesznek mind a kettőben
+  def dr = SeRemKliens.dr
+  def fuggoSeTip = SeRemKliens.fuggoSeTip
+  //drClose meg nem ebbe az osztályba kell
 }

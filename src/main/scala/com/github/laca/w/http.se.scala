@@ -3,6 +3,7 @@ package com.github.laca.w
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.remote.RemoteWebDriver
 //import com.machinepublishers.jbrowserdriver.JBrowserDriver;
 //import com.machinepublishers.jbrowserdriver.Settings;
 
@@ -81,5 +82,36 @@ object SeRemKliens
     }
   }
 
+  private var drOpt: Option[RemoteWebDriver] = None
+  def dr: RemoteWebDriver =
+  {
+    if (drOpt == None)
+    { println("dr nyit")
+      drOpt = Some(SeRemKliens())
+    }
+    drOpt.get
+  }
+
+  def drClose = 
+  {
+    dr.quit
+    drOpt = None
+    Lap.lapok.clear   //de lehet, hogy (al)típusra szűrni kéne... NEM, mert determinálva vannak, csak egyféle lehet benne egyszerre
+    println("dr csuk")
+  }
+
+  def fuggoSeTip = if (drOpt==None) "" else KONFIG.konf.seTip
+
+  def muv(par: org.scalatra.Params)/*:Serializable*/ =
+  {
+    par("muv") match
+    {
+      case "csuk" =>
+      {
+        drClose
+        """{"se": "csukva"}"""
+      }
+    }
+  }
 
 }
