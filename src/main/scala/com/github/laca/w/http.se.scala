@@ -6,6 +6,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.remote.RemoteWebDriver
 //import com.machinepublishers.jbrowserdriver.JBrowserDriver;
 //import com.machinepublishers.jbrowserdriver.Settings;
+import collection.JavaConverters._
 
 /**
  * Selenium böngésző
@@ -70,6 +71,12 @@ object SeHttpKliens
   }
 }
 
+case class AblakStatuszValasz
+( histHossz: Long
+, histSorsz: Long
+, lap: LapValasz
+)
+
 object SeRemKliens
 { 
   def apply() =
@@ -88,6 +95,9 @@ object SeRemKliens
     if (drOpt == None)
     { println("dr nyit")
       drOpt = Some(SeRemKliens())
+      aktAblak = drOpt.get.getWindowHandle
+      /**/println("kezdő ablak azon: " + aktAblak)    // 15 szokott lenni FFDR-nél
+      lapokAblakonkentHistoriaSzerint += aktAblak -> collection.mutable.Map.empty
     }
     drOpt.get
   }
@@ -97,10 +107,16 @@ object SeRemKliens
     dr.quit
     drOpt = None
     Lap.lapok.clear   //de lehet, hogy (al)típusra szűrni kéne... NEM, mert determinálva vannak, csak egyféle lehet benne egyszerre
+    lapokAblakonkentHistoriaSzerint.clear
     println("dr csuk")
   }
 
   def fuggoSeTip = if (drOpt==None) "" else KONFIG.konf.seTip
+
+  def ablakok =
+  {
+    dr.getWindowHandles.asScala.map(h => h -> (if (h==dr.getWindowHandle) "akt" else ""))
+  }
 
   def muv(par: org.scalatra.Params)/*:Serializable*/ =
   {
@@ -111,7 +127,26 @@ object SeRemKliens
         drClose
         """{"se": "csukva"}"""
       }
+      case "kepes" => """{"capabilities": """" + dr.asInstanceOf[org.openqa.selenium.remote.RemoteWebDriver].getCapabilities + """"}"""
+      case "ablak" => ablakok  // ()=> Set[String, String], az egész muv ettől (par)=> Object lesz, de simán tud belőle json-t csinálni
+      case "ujablak" => 
+      {
+        dr.executeScript("window.open('', '');")
+        ablakok
+      }
+      //case "ablakstatusz" => AblakStatuszValasz(histHossz, aktHistoriaSorszam, AblakStatuszValasz(par("abl").toLong)(0L))
+      case "ablakstatusz" => lapokAblakonkentHistoriaSzerint(par("abl"))  //az ablak egész históriája
     }
   }
+
+  val lapokAblakonkentHistoriaSzerint: collection.mutable.Map[String, collection.mutable.Map[Long, java.time.Instant]] = collection.mutable.Map.empty
+  // ablakAzon -> (históriaSorszám -> lapAzon)
+  var aktAblak = ""
+  
+  def histHossz = dr.executeScript("return history.length;").asInstanceOf[Long]
+  def ujHistoriaElem(lap: java.time.Instant) = lapokAblakonkentHistoriaSzerint(aktAblak) += histHossz -> lap
+
+  var aktHistoriaSorszam = 0L
+
 
 }

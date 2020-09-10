@@ -21,7 +21,7 @@ case class AlapTipussal
 )
 // ezt az önszívatást abbafejezem - minden lapos lesz, kivéve Kép
 
-case class ValaszObj
+case class LapValasz
 ( azon: String
 , url: String
 , cim: String
@@ -56,7 +56,7 @@ class Moricka (val pURL: String, tip: String) extends Lap
   cim = "Móricka"
   url = pURL
   //override def o:Serializable = AlapTipussal(Alap(url, cim, html, kep), tip)
-  override def o:Serializable = ValaszObj(pill.toString, url, cim, html, kep, tip, "")
+  override def o:Serializable = LapValasz(pill.toString, url, cim, html, kep, tip, "")
 
   override def htmlFrissit = { html = "<p>még üres(?) tartalom</p>"; this}
 }
