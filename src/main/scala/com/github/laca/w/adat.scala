@@ -29,6 +29,7 @@ case class LapValasz
 , kep: Kep
 , tip: String
 , altip: String  //pl. seTip
+, egyeb: Option[Any]  //pl. Se-nél ablakinfók
 )
 
 trait Lap
@@ -56,7 +57,7 @@ class Moricka (val pURL: String, tip: String) extends Lap
   cim = "Móricka"
   url = pURL
   //override def o:Serializable = AlapTipussal(Alap(url, cim, html, kep), tip)
-  override def o:Serializable = LapValasz(pill.toString, url, cim, html, kep, tip, "")
+  override def o:Serializable = LapValasz(pill.toString, url, cim, html, kep, tip, "", None)
 
   override def htmlFrissit = { html = "<p>még üres(?) tartalom</p>"; this}
 }

@@ -77,7 +77,7 @@ case class AblakStatuszValasz
 , lap: LapValasz
 )
 
-object SeRemKliens
+trait SeRemKliens
 { 
   def apply() =
   { /**/println(s"apply SeRemKliens (${KONFIG.konf.seTip})")
@@ -104,18 +104,23 @@ object SeRemKliens
 
   def drClose = 
   {
-    dr.quit
-    drOpt = None
-    Lap.lapok.clear   //de lehet, hogy (al)típusra szűrni kéne... NEM, mert determinálva vannak, csak egyféle lehet benne egyszerre
-    lapokAblakonkentHistoriaSzerint.clear
-    println("dr csuk")
+    drOpt foreach  //nem biztos, hogy nyitva van, pl. ScalatraBootstrap destruktorában
+    { dr =>
+      {
+        dr.quit
+        drOpt = None
+        Lap.lapok.clear   //de lehet, hogy (al)típusra szűrni kéne... NEM, mert determinálva vannak, csak egyféle lehet benne egyszerre
+        lapokAblakonkentHistoriaSzerint.clear
+        println("dr csuk")
+      }
+    }
   }
 
   def fuggoSeTip = if (drOpt==None) "" else KONFIG.konf.seTip
 
   def ablakok =
   {
-    dr.getWindowHandles.asScala.map(h => h -> (if (h==dr.getWindowHandle) "akt" else ""))
+    drOpt map (d => d.getWindowHandles.asScala.map(h => h -> (if (h==d.getWindowHandle) "akt" else ""))) getOrElse Set("nincs" -> "")
   }
 
   def muv(par: org.scalatra.Params)/*:Serializable*/ =
@@ -125,6 +130,7 @@ object SeRemKliens
       case "csuk" =>
       {
         drClose
+        lapokAblakonkentHistoriaSzerint.clear
         """{"se": "csukva"}"""
       }
       case "kepes" => """{"capabilities": """" + dr.asInstanceOf[org.openqa.selenium.remote.RemoteWebDriver].getCapabilities + """"}"""
@@ -135,7 +141,17 @@ object SeRemKliens
         ablakok
       }
       //case "ablakstatusz" => AblakStatuszValasz(histHossz, aktHistoriaSorszam, AblakStatuszValasz(par("abl").toLong)(0L))
-      case "ablakstatusz" => lapokAblakonkentHistoriaSzerint(par("abl"))  //az ablak egész históriája
+      case "ablakstatusz" =>
+      ( lapokAblakonkentHistoriaSzerint(par("abl"))
+        .map{case (k,v) => ( k
+                           , Map( "url" -> Lap.lapok(v).url
+                                , "cim" -> Lap.lapok(v).cim
+                                )
+                           )
+            } //az ablak egész históriája
+        + (0L -> ("akt" -> aktHistoriaSorszam)) // a história 1-től sorszámozódik, így 0 alatt átadhatok az egész ablakra/históriára jellemző adatot
+      )
+      case "navig" => navig(par)
     }
   }
 
@@ -144,9 +160,29 @@ object SeRemKliens
   var aktAblak = ""
   
   def histHossz = dr.executeScript("return history.length;").asInstanceOf[Long]
-  def ujHistoriaElem(lap: java.time.Instant) = lapokAblakonkentHistoriaSzerint(aktAblak) += histHossz -> lap
+  def ujHistoriaElem(lap: java.time.Instant) = 
+  {
+    val ujAktAblak = drOpt.get.getWindowHandle
+    if (aktAblak != ujAktAblak)  // LEHET, HOGY MEGVÁLTOZOTT! pl. file:///tmp hatására 15-ről 32-re (FFDR-ben)
+    {
+      lapokAblakonkentHistoriaSzerint += ujAktAblak -> lapokAblakonkentHistoriaSzerint(aktAblak)
+      lapokAblakonkentHistoriaSzerint -= aktAblak
+      aktAblak = ujAktAblak
+    }
+    lapokAblakonkentHistoriaSzerint(aktAblak) += histHossz -> lap
+  }
 
   var aktHistoriaSorszam = 0L
 
+  def navig(par:org.scalatra.Params) = //vissza, frissítés, előre
+  {
+    val delta = par.get("delta").getOrElse("0").toLongOption.getOrElse(0L) // -1, 0, +1
+    dr.executeScript(s"history.go($delta)")
+    aktHistoriaSorszam += delta
+    //AblakStatuszValasz(histHossz, aktHistoriaSorszam, Lap.lapok(lapokAblakonkentHistoriaSzerint(aktAblak)(aktHistoriaSorszam)).o.asInstanceOf[LapValasz])
+    Lap.lapok(lapokAblakonkentHistoriaSzerint(aktAblak)(aktHistoriaSorszam)).o
+  }
 
 }
+
+object SeRemKliens extends SeRemKliens {}
