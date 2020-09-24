@@ -7,6 +7,7 @@ import org.openqa.selenium.remote.RemoteWebDriver
 //import com.machinepublishers.jbrowserdriver.JBrowserDriver;
 //import com.machinepublishers.jbrowserdriver.Settings;
 import collection.JavaConverters._
+import util.chaining._
 
 /**
  * Selenium böngésző
@@ -136,13 +137,18 @@ trait SeRemKliens
       case "kepes" => """{"capabilities": """" + dr.asInstanceOf[org.openqa.selenium.remote.RemoteWebDriver].getCapabilities + """"}"""
       case "ablak" => ablakok  // ()=> Set[String, String], az egész muv ettől (par)=> Object lesz, de simán tud belőle json-t csinálni
       case "ujablak" => 
-      {
-        dr.executeScript("window.open('', '');")
+      { /**/println(s"ujblak elején $lapokAblakonkentHistoriaSzerint ${lapokAblakonkentHistoriaSzerint.keySet} ${dr.getWindowHandles}")
+        dr.executeScript("window.open('', '');")  //most pont 1 db lapokAblakonkentHistoriaSzerint-ben nem szereplő ablak-azonosító van
+        /**/println(s" ${lapokAblakonkentHistoriaSzerint.keySet} ${dr.getWindowHandles.asScala}")
+        val ujAblakAzon = (dr.getWindowHandles.asScala diff lapokAblakonkentHistoriaSzerint.keySet).head  /**/.tap(u=>println(s"ujAblakAzon=$u"))
+        ablakValt(ujAblakAzon)
+        lapokAblakonkentHistoriaSzerint += ujAblakAzon -> collection.mutable.Map(/*1L -> (new RemSeLap("")).pill*/)
+        /**/println(s"...végén $lapokAblakonkentHistoriaSzerint")
         ablakok
       }
       //case "ablakstatusz" => AblakStatuszValasz(histHossz, aktHistoriaSorszam, AblakStatuszValasz(par("abl").toLong)(0L))
       case "ablakstatusz" =>
-      ( lapokAblakonkentHistoriaSzerint(par("abl"))
+      ( lapokAblakonkentHistoriaSzerint/**/.tap(println)/**/(par("abl"))   
         .map{case (k,v) => ( k
                            , Map( "url" -> Lap.lapok(v).url
                                 , "cim" -> Lap.lapok(v).cim
@@ -152,6 +158,7 @@ trait SeRemKliens
         + (0L -> ("akt" -> aktHistoriaSorszam)) // a história 1-től sorszámozódik, így 0 alatt átadhatok az egész ablakra/históriára jellemző adatot
       )
       case "navig" => navig(par)
+      case "ablakvalt" => { ablakValt(par("abl")); ablakok }
     }
   }
 
@@ -181,6 +188,19 @@ trait SeRemKliens
     aktHistoriaSorszam += delta
     //AblakStatuszValasz(histHossz, aktHistoriaSorszam, Lap.lapok(lapokAblakonkentHistoriaSzerint(aktAblak)(aktHistoriaSorszam)).o.asInstanceOf[LapValasz])
     Lap.lapok(lapokAblakonkentHistoriaSzerint(aktAblak)(aktHistoriaSorszam)).o
+  }
+
+/*
+  def ujAblakAzon = //amit létrehoztunk executeScript(window.open)-nel, de még nincs benne lapokAblakonkentHistoriaSzerint-ben (csak egy van ilyen)
+  {
+    (dr.getWindowHandles.asScala diff lapokAblakonkentHistoriaSzerint.keySet).head//Option getOrElse ""
+  }
+*/  //ha nem kell máshová, jó a val az "ujablak" case-funkcióban
+
+  def ablakValt(ujazon: String) =
+  {
+    dr.switchTo.window(ujazon)
+    aktAblak = ujazon
   }
 
 }

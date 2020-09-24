@@ -18,7 +18,7 @@ class RemSeLap(override val pURL: String)  extends SeLap(pURL) //with RemSeLapT
   //**/println ("kapott url:"+url)  SeLap-ból megcsinálja
   //if (url.isEmpty) dr.get("about:blank") else dr.get(url)
     /**/println ("eddigi ablak azon: " + dr.getWindowHandle)  // B+! Megváltozik!!!
-  try { dr.get(url) }
+  try { dr.get(if (url.isEmpty) "about:blank" else url) }
   catch
   {
     case ex:Throwable => 
