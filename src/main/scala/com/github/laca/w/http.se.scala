@@ -130,7 +130,7 @@ trait SeRemKliens
       case "ablak" => ablakok  // ()=> Set[String, String], az egész muv ettől (par)=> Object lesz, de simán tud belőle json-t csinálni
       case "ujablak" => 
       { /**/println(s"ujblak elején $lapokAblakonkentHistoriaSzerint ${lapokAblakonkentHistoriaSzerint.keySet} ${dr.getWindowHandles}")
-        dr.executeScript("window.open('', '');")  //most pont 1 db lapokAblakonkentHistoriaSzerint-ben nem szereplő ablak-azonosító van
+        dr.executeScript("window.open('', '');")  //most pont 1 db lapokAblakonkentHistoriaSzerint -ben nem szereplő ablak-azonosító van
         /**/println(s" ${lapokAblakonkentHistoriaSzerint.keySet} ${dr.getWindowHandles.asScala}")
         val ujAblakAzon = (dr.getWindowHandles.asScala diff lapokAblakonkentHistoriaSzerint.keySet).head  /**/.tap(u=>println(s"ujAblakAzon=$u"))
         ablakValt(ujAblakAzon)
@@ -147,8 +147,22 @@ trait SeRemKliens
 
   val lapokAblakonkentHistoriaSzerint: collection.mutable.Map[String, collection.mutable.Map[Long, java.time.Instant]] = collection.mutable.Map.empty
   // ablakAzon -> (históriaSorszám -> lapAzon)
+  // Map[Long, Instant] helyett lehetne ArrayBuffer[Instant]    ... de akkor ablakStatusz egész másképp nézne ki (honnan szedném a k-t?)
   // A 0-s indexben az akt. históriasorszám lesz, mert az ablakfüggő! (méghozzá másodpercben az epochához képest, ha már Instant lett)
-  var aktAblak = ""
+  
+  private var _aktAblak = ""
+  def aktAblak =
+  {
+    val ujAktAblak = drOpt.get.getWindowHandle
+    if (_aktAblak != ujAktAblak)  // LEHET, HOGY MEGVÁLTOZOTT! pl. file:///tmp hatására 15-ről 32-re (FFDR-ben)
+    {
+      lapokAblakonkentHistoriaSzerint += ujAktAblak -> lapokAblakonkentHistoriaSzerint(_aktAblak)
+      lapokAblakonkentHistoriaSzerint -= _aktAblak
+      _aktAblak = ujAktAblak
+    }
+    ujAktAblak
+  }
+  def aktAblak_=(azon:String) = _aktAblak = azon
 
   def ablakStatusz(ablAzon:String) =
   ( lapokAblakonkentHistoriaSzerint/**/.tap(println)/**/(ablAzon)   
@@ -167,13 +181,6 @@ trait SeRemKliens
   def histHossz = dr.executeScript("return history.length;").asInstanceOf[Long]
   def ujHistoriaElem(lap: java.time.Instant) = 
   {
-    val ujAktAblak = drOpt.get.getWindowHandle
-    if (aktAblak != ujAktAblak)  // LEHET, HOGY MEGVÁLTOZOTT! pl. file:///tmp hatására 15-ről 32-re (FFDR-ben)
-    {
-      lapokAblakonkentHistoriaSzerint += ujAktAblak -> lapokAblakonkentHistoriaSzerint(aktAblak)
-      lapokAblakonkentHistoriaSzerint -= aktAblak
-      aktAblak = ujAktAblak
-    }
     lapokAblakonkentHistoriaSzerint(aktAblak) += histHossz -> lap
   }
 
