@@ -11,12 +11,12 @@ case class HistoriaValasz
 // , ??
 )
 
-//import RemSeLap._
-import SeRemKliens._
+import SeRemKliens._   // helyett RemSeLap._ , de belül   --az meg nem műx, dr None lesz
 class RemSeLap(override val pURL: String)  extends SeLap(pURL) //with RemSeLapT
 {
   //**/println ("kapott url:"+url)  SeLap-ból megcsinálja
   //if (url.isEmpty) dr.get("about:blank") else dr.get(url)
+  //import RemSeLap._   // belül kell lennie, mert különben unrecoverable cycle resolving import   --nem műx, dr None lesz
     /**/println ("eddigi ablak azon: " + dr.getWindowHandle)  // B+! Megváltozik!!!
   try { dr.get(if (url.isEmpty) "about:blank" else url) }
   catch
@@ -34,11 +34,11 @@ class RemSeLap(override val pURL: String)  extends SeLap(pURL) //with RemSeLapT
   }
   //{
     cim = dr.getTitle
-    // url = dr.getCurrentUrl //nem var!
+    url = dr.getCurrentUrl //nem var! - de.
     /**/println ("title:"+dr.getTitle)
     //**/println ("lapcím:"+dr.klLapCim)
     //**/println ("capabilities:"+dr.asInstanceOf[org.openqa.selenium.remote.RemoteWebDriver].getCapabilities)
-    /**/println ("url:"+dr.getCurrentUrl)
+    /**/println ("url:"+url)
     /**/println ("hist. hossz: " + histHossz)
     /**/println ("új??? ablak azon: " + dr.getWindowHandle)  // B+! Megváltozik!!! a file:///tmp címtől 15-ből 32 lesz!  ...és az isten tudja, mi maradt meg a históriából
     /**/println ("új??? hist. hossz: " + histHossz)   //ez legalább megmaradt - alighanem csak a lapokAblakonkentHistoriaSzerint romlik el
@@ -50,7 +50,8 @@ class RemSeLap(override val pURL: String)  extends SeLap(pURL) //with RemSeLapT
   aktHistoriaSorszam = histHossz
   /**/println("akt. hist. sorsz.: " + aktHistoriaSorszam)
 
-  override def o/*:Serializable*/ = LapValasz(pill.toString, url, cim, html, kep, "se", fuggoSeTip, Some(HistoriaValasz(aktAblak, histHossz, aktHistoriaSorszam)))
+  //override def o/*:Serializable*/ = LapValasz(pill.toString, url, cim, html, kep, "se", fuggoSeTip, Some(HistoriaValasz(aktAblak, histHossz, aktHistoriaSorszam)))
+  override def o = LapValasz(pill.toString, url, cim, html, kep, "se", fuggoSeTip, Some(ablakStatusz(aktAblak)))
 
   override def htmlFrissit = 
   {
@@ -66,8 +67,8 @@ class RemSeLap(override val pURL: String)  extends SeLap(pURL) //with RemSeLapT
 
 }
 
-//object RemSeLap
-  ///*extends SeRemKliens*/ {}
+object RemSeLap
+  extends SeRemKliens {}
 /*
 { //nem tudtam eldönteni, hol legyenek; lesznek mind a kettőben
   def dr = SeRemKliens.dr

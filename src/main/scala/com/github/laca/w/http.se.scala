@@ -8,6 +8,7 @@ import org.openqa.selenium.remote.RemoteWebDriver
 //import com.machinepublishers.jbrowserdriver.Settings;
 import collection.JavaConverters._
 import util.chaining._
+import java.time.Instant
 
 /**
  * Selenium böngésző
@@ -80,31 +81,22 @@ case class AblakStatuszValasz
 
 trait SeRemKliens
 { 
-  def apply() =
-  { /**/println(s"apply SeRemKliens (${KONFIG.konf.seTip})")
-    KONFIG.konf.seTip match
-    {
-      //case "JBDR" => new JBrowserDriver
-      case "FFDR" => new org.openqa.selenium.firefox.FirefoxDriver(FFSeHttpKliens.opt)
-      case _ => new org.openqa.selenium.remote.RemoteWebDriver(new org.openqa.selenium.MutableCapabilities)
-    }
-  }
-
   private var drOpt: Option[RemoteWebDriver] = None
   def dr: RemoteWebDriver =
   {
     if (drOpt == None)
     { println("dr nyit")
       drOpt = Some(SeRemKliens())
+      /**/println("drOpt="+drOpt)
       aktAblak = drOpt.get.getWindowHandle
       /**/println("kezdő ablak azon: " + aktAblak)    // 15 szokott lenni FFDR-nél
-      lapokAblakonkentHistoriaSzerint += aktAblak -> collection.mutable.Map.empty
+      lapokAblakonkentHistoriaSzerint += aktAblak -> collection.mutable.Map(0L -> szambolAblakAzon(1L)) //collection.mutable.Map.empty
     }
     drOpt.get
   }
 
   def drClose = 
-  {
+  { /**/println("drOpt="+drOpt)
     drOpt foreach  //nem biztos, hogy nyitva van, pl. ScalatraBootstrap destruktorában
     { dr =>
       {
@@ -121,7 +113,7 @@ trait SeRemKliens
 
   def ablakok =
   {
-    drOpt map (d => d.getWindowHandles.asScala.map(h => h -> (if (h==d.getWindowHandle) "akt" else ""))) getOrElse Set("nincs" -> "")
+    drOpt map (d => d.getWindowHandles.asScala.map(h => h -> (if (h==d.getWindowHandle) ablakStatusz(h) else ""))) getOrElse Set("nincs" -> "")
   }
 
   def muv(par: org.scalatra.Params)/*:Serializable*/ =
@@ -142,21 +134,12 @@ trait SeRemKliens
         /**/println(s" ${lapokAblakonkentHistoriaSzerint.keySet} ${dr.getWindowHandles.asScala}")
         val ujAblakAzon = (dr.getWindowHandles.asScala diff lapokAblakonkentHistoriaSzerint.keySet).head  /**/.tap(u=>println(s"ujAblakAzon=$u"))
         ablakValt(ujAblakAzon)
-        lapokAblakonkentHistoriaSzerint += ujAblakAzon -> collection.mutable.Map(/*1L -> (new RemSeLap("")).pill*/)
+        lapokAblakonkentHistoriaSzerint += ujAblakAzon -> collection.mutable.Map(0L -> szambolAblakAzon(1L)/*1L -> (new RemSeLap("")).pill*/)
         /**/println(s"...végén $lapokAblakonkentHistoriaSzerint")
         ablakok
       }
       //case "ablakstatusz" => AblakStatuszValasz(histHossz, aktHistoriaSorszam, AblakStatuszValasz(par("abl").toLong)(0L))
-      case "ablakstatusz" =>
-      ( lapokAblakonkentHistoriaSzerint/**/.tap(println)/**/(par("abl"))   
-        .map{case (k,v) => ( k
-                           , Map( "url" -> Lap.lapok(v).url
-                                , "cim" -> Lap.lapok(v).cim
-                                )
-                           )
-            } //az ablak egész históriája
-        + (0L -> ("akt" -> aktHistoriaSorszam)) // a história 1-től sorszámozódik, így 0 alatt átadhatok az egész ablakra/históriára jellemző adatot
-      )
+      case "ablakstatusz" => ablakStatusz(par("abl"))
       case "navig" => navig(par)
       case "ablakvalt" => { ablakValt(par("abl")); ablakok }
     }
@@ -164,7 +147,22 @@ trait SeRemKliens
 
   val lapokAblakonkentHistoriaSzerint: collection.mutable.Map[String, collection.mutable.Map[Long, java.time.Instant]] = collection.mutable.Map.empty
   // ablakAzon -> (históriaSorszám -> lapAzon)
+  // A 0-s indexben az akt. históriasorszám lesz, mert az ablakfüggő! (méghozzá másodpercben az epochához képest, ha már Instant lett)
   var aktAblak = ""
+
+  def ablakStatusz(ablAzon:String) =
+  ( lapokAblakonkentHistoriaSzerint/**/.tap(println)/**/(ablAzon)   
+    .map{case (k,v) =>  ( k
+                        , if (k==0L)
+                            Map("akt" -> aktAblakHistoriaSorszam(ablAzon))
+                          else
+                            Map ( "url" -> Lap.lapok(v).url
+                                , "cim" -> Lap.lapok(v).cim
+                                )
+                        )
+        } //az ablak egész históriája
+    //+ (0L -> ("akt" -> aktHistoriaSorszam)) // a história 1-től sorszámozódik, így 0 alatt átadhatok az egész ablakra/históriára jellemző adatot
+  )
   
   def histHossz = dr.executeScript("return history.length;").asInstanceOf[Long]
   def ujHistoriaElem(lap: java.time.Instant) = 
@@ -179,7 +177,11 @@ trait SeRemKliens
     lapokAblakonkentHistoriaSzerint(aktAblak) += histHossz -> lap
   }
 
-  var aktHistoriaSorszam = 0L
+  //var aktHistoriaSorszam = 0L   NEM JÓ! aktAblak-függőnek kell lennie!
+  def szambolAblakAzon(n:Long):Instant = Instant.ofEpochSecond(n)   //ha számot kell betenni ablakazon. helyébe
+  def aktAblakHistoriaSorszam(abl:String) = lapokAblakonkentHistoriaSzerint(aktAblak)(0L).getEpochSecond
+  def aktHistoriaSorszam = aktAblakHistoriaSorszam(aktAblak)
+  def aktHistoriaSorszam_=(sorsz:Long) = lapokAblakonkentHistoriaSzerint(aktAblak)(0L) = szambolAblakAzon(sorsz)
 
   def navig(par:org.scalatra.Params) = //vissza, frissítés, előre
   {
@@ -205,4 +207,16 @@ trait SeRemKliens
 
 }
 
-object SeRemKliens extends SeRemKliens {}
+object SeRemKliens extends SeRemKliens 
+{
+  def apply() =
+  { /**/println(s"apply SeRemKliens (${KONFIG.konf.seTip})")
+    KONFIG.konf.seTip match
+    {
+      //case "JBDR" => new JBrowserDriver
+      case "FFDR" => new org.openqa.selenium.firefox.FirefoxDriver(FFSeHttpKliens.opt)
+      case _ => new org.openqa.selenium.remote.RemoteWebDriver(new org.openqa.selenium.MutableCapabilities)
+    }
+  }
+
+}
