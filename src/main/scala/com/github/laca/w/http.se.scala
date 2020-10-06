@@ -90,7 +90,7 @@ trait SeRemKliens
       /**/println("drOpt="+drOpt)
       aktAblak = drOpt.get.getWindowHandle
       /**/println("kezdő ablak azon: " + aktAblak)    // 15 szokott lenni FFDR-nél
-      lapokAblakonkentHistoriaSzerint += aktAblak -> collection.mutable.Map(0L -> szambolAblakAzon(1L)) //collection.mutable.Map.empty
+      lapokAblakonkentHistoriaSzerint += aktAblak -> collection.mutable.Map(0L -> szambolAblakAzon(0L)) //collection.mutable.Map.empty
     }
     drOpt.get
   }
@@ -134,7 +134,7 @@ trait SeRemKliens
         /**/println(s" ${lapokAblakonkentHistoriaSzerint.keySet} ${dr.getWindowHandles.asScala}")
         val ujAblakAzon = (dr.getWindowHandles.asScala diff lapokAblakonkentHistoriaSzerint.keySet).head  /**/.tap(u=>println(s"ujAblakAzon=$u"))
         ablakValt(ujAblakAzon)
-        lapokAblakonkentHistoriaSzerint += ujAblakAzon -> collection.mutable.Map(0L -> szambolAblakAzon(1L)/*1L -> (new RemSeLap("")).pill*/)
+        lapokAblakonkentHistoriaSzerint += ujAblakAzon -> collection.mutable.Map(0L -> szambolAblakAzon(0L)/*1L -> (new RemSeLap("")).pill*/)
         /**/println(s"...végén $lapokAblakonkentHistoriaSzerint")
         ablakok
       }
@@ -147,7 +147,7 @@ trait SeRemKliens
 
   val lapokAblakonkentHistoriaSzerint: collection.mutable.Map[String, collection.mutable.Map[Long, java.time.Instant]] = collection.mutable.Map.empty
   // ablakAzon -> (históriaSorszám -> lapAzon)
-  // Map[Long, Instant] helyett lehetne ArrayBuffer[Instant]    ... de akkor ablakStatusz egész másképp nézne ki (honnan szedném a k-t?)
+  // Map[Long, Instant] helyett lehetne ArrayBuffer[Instant]    ... de akkor ablakStatusz egész másképp nézne ki (honnan szedném a k-t? - zipWithIndex)
   // A 0-s indexben az akt. históriasorszám lesz, mert az ablakfüggő! (méghozzá másodpercben az epochához képest, ha már Instant lett)
   
   private var _aktAblak = ""
@@ -164,11 +164,13 @@ trait SeRemKliens
   }
   def aktAblak_=(azon:String) = _aktAblak = azon
 
-  def ablakStatusz(ablAzon:String) =
+  def ablakStatusz(ablAzon:String) =    //mutable.Map[Long, Map[String,Any]]   , azért Any, mert az aktAblakHistoriaSorszam Long
   ( lapokAblakonkentHistoriaSzerint/**/.tap(println)/**/(ablAzon)   
     .map{case (k,v) =>  ( k
                         , if (k==0L)
-                            Map("akt" -> aktAblakHistoriaSorszam(ablAzon))
+                            Map ( "akt" -> aktAblakHistoriaSorszam(ablAzon)
+                                , "abl" -> aktAblak   //ha változott, ezúton tudatjuk az előoldallal
+                                )
                           else
                             Map ( "url" -> Lap.lapok(v).url
                                 , "cim" -> Lap.lapok(v).cim

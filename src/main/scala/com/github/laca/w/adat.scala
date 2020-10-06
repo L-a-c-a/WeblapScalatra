@@ -64,15 +64,15 @@ class Moricka (val pURL: String, tip: String) extends Lap
 
 object Lap
 {
-  def apply (par: org.scalatra.Params): Lap =
+  def apply (par: org.scalatra.Params): Lap = apply(par("tip"), par("url"))
+  def apply (tip: String, url:String/* = "about:blank"*/): Lap =            //itt még nem tudni, hogy az about:blank -nak van-e értelme
   {
-    //*nagyon ideiglenesen:*/if (par("tip") != "se") SeLap.drClose
-    par("tip") match
+    tip match
     {
       //case "se" => new SeLap(par("url"))
-      case "se" => new RemSeLap(par("url"))  //seTip-től függő még egy elágazás?! vagy egy apply a RemSeLap objektumba?
+      case "se" => new RemSeLap(url)  //seTip-től függő még egy elágazás?! vagy egy apply a RemSeLap objektumba?
       //case "lap" => new Moricka(par("url"), par("tip"))
-      case _ => new Moricka(par("url"), par("tip"))
+      case _ => new Moricka(url, tip)
     }
   }
 

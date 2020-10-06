@@ -17,38 +17,41 @@ class RemSeLap(override val pURL: String)  extends SeLap(pURL) //with RemSeLapT
   //**/println ("kapott url:"+url)  SeLap-ból megcsinálja
   //if (url.isEmpty) dr.get("about:blank") else dr.get(url)
   //import RemSeLap._   // belül kell lennie, mert különben unrecoverable cycle resolving import   --nem műx, dr None lesz
-    /**/println ("eddigi ablak azon: " + dr.getWindowHandle)  // B+! Megváltozik!!!
-  try { dr.get(if (url.isEmpty) "about:blank" else url) }
-  catch
-  {
-    case ex:Throwable => 
-    {
-      println("----WebDriver hiba!----")
-      println(ex.getMessage)
-    /**/println ("title:"+dr.getTitle)
-    /**/println ("url:"+dr.getCurrentUrl)
-    /**/println ("hist. hossz: " + histHossz)
-      ex.printStackTrace
-      //dr.get("about:blank")  //ez biztos jó  ...de nem kell, marad az eddigi lap (ha az a szűz about:blank is)
+  println ("ablak azon: " + dr.getWindowHandle)  // megnyitja a böngészőt, ha még nincs nyitva, és akkor létrehoz egy lapokAblakonkentHistoriaSzerint bejegyzést is
+  if (url.isEmpty)
+    println("üres cím, nem történik semmi más")
+  else
+  { try { dr.get(url) }
+    catch
+    { case ex:Throwable => 
+      {
+        println("----WebDriver hiba!----")
+        println(ex.getMessage)
+      /**/println ("title:"+dr.getTitle)
+      /**/println ("url:"+dr.getCurrentUrl)
+      /**/println ("hist. hossz: " + histHossz)
+        ex.printStackTrace
+        //dr.get("about:blank")  //ez biztos jó  ...de nem kell, marad az eddigi lap (ha az a szűz about:blank is)
+      }
     }
+    //{
+      cim = dr.getTitle
+      url = dr.getCurrentUrl //nem var! - de.
+      /**/println ("title:"+dr.getTitle)
+      //**/println ("lapcím:"+dr.klLapCim)
+      //**/println ("capabilities:"+dr.asInstanceOf[org.openqa.selenium.remote.RemoteWebDriver].getCapabilities)
+      /**/println ("url:"+url)
+      /**/println ("hist. hossz: " + histHossz)
+      /**/println ("új??? ablak azon: " + dr.getWindowHandle)  // B+! Megváltozik!!! a file:///tmp címtől 15-ből 32 lesz!  ...és az isten tudja, mi maradt meg a históriából
+      /**/println ("új??? hist. hossz: " + histHossz)   //ez legalább megmaradt - alighanem csak a lapokAblakonkentHistoriaSzerint romlik el
+    //}
+    /*dr.lapokA... helyett*/ 
+    //SeRemKliens.lapokAblakonkentHistoriaSzerint(SeRemKliens.aktAblak) += dr.executeScript("return history.length;").asInstanceOf[Long] -> pill //ez célfüggvényért kiált
+    ujHistoriaElem(pill)
+    /**/println(SeRemKliens.lapokAblakonkentHistoriaSzerint)
+    aktHistoriaSorszam = histHossz
+    /**/println("akt. hist. sorsz.: " + aktHistoriaSorszam)
   }
-  //{
-    cim = dr.getTitle
-    url = dr.getCurrentUrl //nem var! - de.
-    /**/println ("title:"+dr.getTitle)
-    //**/println ("lapcím:"+dr.klLapCim)
-    //**/println ("capabilities:"+dr.asInstanceOf[org.openqa.selenium.remote.RemoteWebDriver].getCapabilities)
-    /**/println ("url:"+url)
-    /**/println ("hist. hossz: " + histHossz)
-    /**/println ("új??? ablak azon: " + dr.getWindowHandle)  // B+! Megváltozik!!! a file:///tmp címtől 15-ből 32 lesz!  ...és az isten tudja, mi maradt meg a históriából
-    /**/println ("új??? hist. hossz: " + histHossz)   //ez legalább megmaradt - alighanem csak a lapokAblakonkentHistoriaSzerint romlik el
-  //}
-  /*dr.lapokA... helyett*/ 
-  //SeRemKliens.lapokAblakonkentHistoriaSzerint(SeRemKliens.aktAblak) += dr.executeScript("return history.length;").asInstanceOf[Long] -> pill //ez célfüggvényért kiált
-  ujHistoriaElem(pill)
-  /**/println(SeRemKliens.lapokAblakonkentHistoriaSzerint)
-  aktHistoriaSorszam = histHossz
-  /**/println("akt. hist. sorsz.: " + aktHistoriaSorszam)
 
   //override def o/*:Serializable*/ = LapValasz(pill.toString, url, cim, html, kep, "se", fuggoSeTip, Some(HistoriaValasz(aktAblak, histHossz, aktHistoriaSorszam)))
   override def o = LapValasz(pill.toString, url, cim, html, kep, "se", fuggoSeTip, Some(ablakStatusz(aktAblak)))
