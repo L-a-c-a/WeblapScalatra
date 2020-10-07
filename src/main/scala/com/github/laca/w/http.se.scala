@@ -73,10 +73,19 @@ object SeHttpKliens
   }
 }
 
+/*
 case class AblakStatuszValasz
 ( histHossz: Long
 , histSorsz: Long
 , lap: LapValasz
+)
+elfelejthetjük
+*/
+
+case class LapAdatok  //ez megy a LapValasz.lapadatok-be
+( linkek: Option[Serializable]
+, kattintanivalok: Option[Serializable]
+, ablakstatusz: Option[SeRemKliens.AblakStatusz]
 )
 
 trait SeRemKliens
@@ -116,7 +125,7 @@ trait SeRemKliens
     drOpt map (d => d.getWindowHandles.asScala.map(h => h -> (if (h==d.getWindowHandle) ablakStatusz(h) else ""))) getOrElse Set("nincs" -> "")
   }
 
-  def muv(par: org.scalatra.Params)/*:Serializable*/ =
+  def muv(par: org.scalatra.Params)/*:Serializable nem lehet, mert ablakok és ablakStatusz() nem az*/ =
   {
     par("muv") match
     {
@@ -164,7 +173,7 @@ trait SeRemKliens
   }
   def aktAblak_=(azon:String) = _aktAblak = azon
 
-  def ablakStatusz(ablAzon:String) =    //mutable.Map[Long, Map[String,Any]]   , azért Any, mert az aktAblakHistoriaSorszam Long
+  def ablakStatusz(ablAzon:String): SeRemKliens.AblakStatusz =    //mutable.Map[Long, Map[String,Any]]   , azért Any, mert az aktAblakHistoriaSorszam Long
   ( lapokAblakonkentHistoriaSzerint/**/.tap(println)/**/(ablAzon)   
     .map{case (k,v) =>  ( k
                         , if (k==0L)
@@ -227,5 +236,7 @@ object SeRemKliens extends SeRemKliens
       case _ => new org.openqa.selenium.remote.RemoteWebDriver(new org.openqa.selenium.MutableCapabilities)
     }
   }
+
+  type AblakStatusz = collection.mutable.Map[Long, Map[String,Any]] //azért Any, mert az aktAblakHistoriaSorszam Long
 
 }

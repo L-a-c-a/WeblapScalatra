@@ -54,7 +54,7 @@ class RemSeLap(override val pURL: String)  extends SeLap(pURL) //with RemSeLapT
   }
 
   //override def o/*:Serializable*/ = LapValasz(pill.toString, url, cim, html, kep, "se", fuggoSeTip, Some(HistoriaValasz(aktAblak, histHossz, aktHistoriaSorszam)))
-  override def o = LapValasz(pill.toString, url, cim, html, kep, "se", fuggoSeTip, Some(ablakStatusz(aktAblak)))
+  override def o = LapValasz(pill.toString, url, cim, html, kep, "se", fuggoSeTip, Some(LapAdatok(None, None, Some(ablakStatusz(aktAblak)))))
 
   override def htmlFrissit = 
   {

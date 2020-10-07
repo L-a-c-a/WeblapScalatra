@@ -29,7 +29,7 @@ case class LapValasz
 , kep: Kep
 , tip: String
 , altip: String  //pl. seTip
-, egyeb: Option[Any]  //pl. Se-nél ablakinfók
+, lapadatok: Option[Any]  //pl. Se-nél ablakinfók
 )
 
 trait Lap
