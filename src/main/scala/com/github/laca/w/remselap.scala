@@ -1,5 +1,7 @@
 package com.github.laca.w
 
+import collection.JavaConverters._
+
 // RemoteWebServer-t használó SeLap
 
 //trait RemSeLapT extends SeLap { }   //hátha kell (nem biztos)
@@ -9,6 +11,12 @@ case class HistoriaValasz
 , histHossz: Long
 , histSorsz: Long
 // , ??
+)
+
+case class Link
+( absHref: String
+, ujLapra: Boolean    // elem.getAttribute("target") == "_blank"  vagy vmi ilyesmi
+, szoveg: String
 )
 
 import SeRemKliens._   // helyett RemSeLap._ , de belül   --az meg nem műx, dr None lesz
@@ -53,8 +61,11 @@ class RemSeLap(override val pURL: String)  extends SeLap(pURL) //with RemSeLapT
     /**/println("akt. hist. sorsz.: " + aktHistoriaSorszam)
   }
 
+  var linkek: collection.mutable.Buffer[Link] = collection.mutable.Buffer()
+  var kattintanivalok: Any = _
+
   //override def o/*:Serializable*/ = LapValasz(pill.toString, url, cim, html, kep, "se", fuggoSeTip, Some(HistoriaValasz(aktAblak, histHossz, aktHistoriaSorszam)))
-  override def o = LapValasz(pill.toString, url, cim, html, kep, "se", fuggoSeTip, Some(LapAdatok(None, None, Some(ablakStatusz(aktAblak)))))
+  override def o = LapValasz(pill.toString, url, cim, html, kep, "se", fuggoSeTip, Some(LapAdatok(Some(linkek), None, Some(ablakStatusz(aktAblak)))))
 
   override def htmlFrissit = 
   {
@@ -68,6 +79,24 @@ class RemSeLap(override val pURL: String)  extends SeLap(pURL) //with RemSeLapT
     this
   }
 
+  override def linkekFrissit =
+  {
+    linkek =
+      dr.findElements(org.openqa.selenium.By.cssSelector("a[href]")).asScala
+      .map(elem =>
+            Link( elem.getAttribute("href")
+                , false
+                , elem.getText
+                )
+          )
+    /**/println(linkek)
+    this
+  }
+
+  override def kattintanivalokFrissit =
+  {
+    this
+  }
 }
 
 object RemSeLap

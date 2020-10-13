@@ -83,7 +83,7 @@ elfelejthetjük
 */
 
 case class LapAdatok  //ez megy a LapValasz.lapadatok-be
-( linkek: Option[Serializable]
+( linkek: Option[collection.mutable.Buffer[Link]]
 , kattintanivalok: Option[Serializable]
 , ablakstatusz: Option[SeRemKliens.AblakStatusz]
 )

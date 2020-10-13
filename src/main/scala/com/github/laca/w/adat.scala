@@ -47,6 +47,8 @@ trait Lap
 
   def htmlFrissit = this
   def kepFrissit = this
+  def linkekFrissit = this
+  def kattintanivalokFrissit = this
 }
 
 //class UresLap (val pURL: String, tip: String) extends Lap { url = pURL }
@@ -88,6 +90,8 @@ object Lap
     {
       case "html" => lap.htmlFrissit
       case "kep" => lap.kepFrissit
+      case "linkek" => lap.linkekFrissit
+      case "kattintanivalok" => lap.kattintanivalokFrissit
       case _ => lap
     }
     
