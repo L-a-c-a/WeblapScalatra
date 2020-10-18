@@ -73,15 +73,6 @@ object SeHttpKliens
   }
 }
 
-/*
-case class AblakStatuszValasz
-( histHossz: Long
-, histSorsz: Long
-, lap: LapValasz
-)
-elfelejthetjük
-*/
-
 case class LapAdatok  //ez megy a LapValasz.lapadatok-be
 ( linkek: Option[collection.mutable.Buffer[Link]]
 , kattintanivalok: Option[Serializable]
@@ -138,13 +129,8 @@ trait SeRemKliens
       case "kepes" => """{"capabilities": """" + dr.asInstanceOf[org.openqa.selenium.remote.RemoteWebDriver].getCapabilities + """"}"""
       case "ablak" => ablakok  // ()=> Set[String, String], az egész muv ettől (par)=> Object lesz, de simán tud belőle json-t csinálni
       case "ujablak" => 
-      { /**/println(s"ujblak elején $lapokAblakonkentHistoriaSzerint ${lapokAblakonkentHistoriaSzerint.keySet} ${dr.getWindowHandles}")
-        dr.executeScript("window.open('', '');")  //most pont 1 db lapokAblakonkentHistoriaSzerint -ben nem szereplő ablak-azonosító van
-        /**/println(s" ${lapokAblakonkentHistoriaSzerint.keySet} ${dr.getWindowHandles.asScala}")
-        val ujAblakAzon = (dr.getWindowHandles.asScala diff lapokAblakonkentHistoriaSzerint.keySet).head  /**/.tap(u=>println(s"ujAblakAzon=$u"))
-        ablakValt(ujAblakAzon)
-        lapokAblakonkentHistoriaSzerint += ujAblakAzon -> collection.mutable.Map(0L -> szambolAblakAzon(0L)/*1L -> (new RemSeLap("")).pill*/)
-        /**/println(s"...végén $lapokAblakonkentHistoriaSzerint")
+      { 
+        ujAblak
         ablakok
       }
       //case "ablakstatusz" => AblakStatuszValasz(histHossz, aktHistoriaSorszam, AblakStatuszValasz(par("abl").toLong)(0L))
@@ -173,6 +159,16 @@ trait SeRemKliens
   }
   def aktAblak_=(azon:String) = _aktAblak = azon
 
+  def ujAblak =
+  { /**/println(s"ujblak elején $lapokAblakonkentHistoriaSzerint ${lapokAblakonkentHistoriaSzerint.keySet} ${dr.getWindowHandles}")
+    dr.executeScript("window.open('', '');")  //most pont 1 db lapokAblakonkentHistoriaSzerint -ben nem szereplő ablak-azonosító van
+    /**/println(s" ${lapokAblakonkentHistoriaSzerint.keySet} ${dr.getWindowHandles.asScala}")
+    val ujAblakAzon = (dr.getWindowHandles.asScala diff lapokAblakonkentHistoriaSzerint.keySet).head  /**/.tap(u=>println(s"ujAblakAzon=$u"))
+    ablakValt(ujAblakAzon)
+    lapokAblakonkentHistoriaSzerint += ujAblakAzon -> collection.mutable.Map(0L -> szambolAblakAzon(0L)/*1L -> (new RemSeLap("")).pill*/)
+    /**/println(s"...végén $lapokAblakonkentHistoriaSzerint")
+  }
+
   def ablakStatusz(ablAzon:String): SeRemKliens.AblakStatusz =    //mutable.Map[Long, Map[String,Any]]   , azért Any, mert az aktAblakHistoriaSorszam Long
   ( lapokAblakonkentHistoriaSzerint/**/.tap(println)/**/(ablAzon)   
     .map{case (k,v) =>  ( k
@@ -197,7 +193,8 @@ trait SeRemKliens
 
   //var aktHistoriaSorszam = 0L   NEM JÓ! aktAblak-függőnek kell lennie!
   def szambolAblakAzon(n:Long):Instant = Instant.ofEpochSecond(n)   //ha számot kell betenni ablakazon. helyébe
-  def aktAblakHistoriaSorszam(abl:String) = lapokAblakonkentHistoriaSzerint(aktAblak)(0L).getEpochSecond
+  implicit def ablakAzonbolSzam(i:Instant) = i.getEpochSecond   //ezt így pipe-'al lehetne használni, vagy implicit lehetne
+  def aktAblakHistoriaSorszam(abl:String):Long = lapokAblakonkentHistoriaSzerint(aktAblak)(0L)  //.getEpochSecond - itt működik az implicit
   def aktHistoriaSorszam = aktAblakHistoriaSorszam(aktAblak)
   def aktHistoriaSorszam_=(sorsz:Long) = lapokAblakonkentHistoriaSzerint(aktAblak)(0L) = szambolAblakAzon(sorsz)
 
