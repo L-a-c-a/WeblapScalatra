@@ -65,7 +65,7 @@ class RemSeLap(override val pURL: String)  extends SeLap(pURL) //with RemSeLapT
   var kattintanivalok: Any = _
 
   //override def o/*:Serializable*/ = LapValasz(pill.toString, url, cim, html, kep, "se", fuggoSeTip, Some(HistoriaValasz(aktAblak, histHossz, aktHistoriaSorszam)))
-  override def o = LapValasz(pill.toString, url, cim, html, kep, "se", fuggoSeTip, Some(LapAdatok(Some(linkek), None, Some(ablakStatusz(aktAblak)))))
+  override def o = LapValasz(pill.toString, url, cim, html, kep, "se", fuggoSeTip, Some(LapAdatok(Some(linkek), None, Some(ablakok))))
 
   override def htmlFrissit = 
   {
@@ -73,8 +73,14 @@ class RemSeLap(override val pURL: String)  extends SeLap(pURL) //with RemSeLapT
     this
   }
 
-  override def kepFrissit =
+  override def kepFrissit(par: Option[String]=None) =
   {
+    par match
+    {
+      case Some("fel") => dr.executeScript("window.scrollBy(0,-600)", "");
+      case Some("le") => dr.executeScript("window.scrollBy(0,600)", ""); // a kép magassága alapból 694
+      case _ =>
+    }
     kep = Kep("png", "base64", dr.getScreenshotAs(org.openqa.selenium.OutputType.BASE64))
     this
   }

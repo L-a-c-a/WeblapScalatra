@@ -73,10 +73,10 @@ object SeHttpKliens
   }
 }
 
-case class LapAdatok  //ez megy a LapValasz.lapadatok-be
+case class LapAdatok  //ez megy a LapValasz.lapadatok-ba (ami Option[Any])
 ( linkek: Option[collection.mutable.Buffer[Link]]
 , kattintanivalok: Option[Serializable]
-, ablakstatusz: Option[SeRemKliens.AblakStatusz]
+, ablakok: Option[SeRemKliens.Ablakok]
 )
 
 trait SeRemKliens
@@ -111,9 +111,15 @@ trait SeRemKliens
 
   def fuggoSeTip = if (drOpt==None) "" else KONFIG.konf.seTip
 
-  def ablakok =
+  type AblakStatusz = collection.mutable.Map[Long, Map[String,Any]] //azért Any, mert az aktAblakHistoriaSorszam Long
+  val uresAblakStatusz:AblakStatusz = collection.mutable.Map.empty
+
+  type Ablakok = collection.mutable.Set[(String, AblakStatusz)]
+
+  def ablakok:Ablakok = //:SeRemKliens.Ablakok =
   {
-    drOpt map (d => d.getWindowHandles.asScala.map(h => h -> (if (h==d.getWindowHandle) ablakStatusz(h) else ""))) getOrElse Set("nincs" -> "")
+    drOpt map (d => d.getWindowHandles.asScala.map(h => h -> (if (h==d.getWindowHandle) ablakStatusz(h) else uresAblakStatusz))
+              ) getOrElse collection.mutable.Set("nincs" -> uresAblakStatusz)
   }
 
   def muv(par: org.scalatra.Params)/*:Serializable nem lehet, mert ablakok és ablakStatusz() nem az*/ =
@@ -234,6 +240,5 @@ object SeRemKliens extends SeRemKliens
     }
   }
 
-  type AblakStatusz = collection.mutable.Map[Long, Map[String,Any]] //azért Any, mert az aktAblakHistoriaSorszam Long
 
 }

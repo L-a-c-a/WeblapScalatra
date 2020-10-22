@@ -46,7 +46,7 @@ trait Lap
   /**/println("lapok: " + Lap.lapok)
 
   def htmlFrissit = this
-  def kepFrissit = this
+  def kepFrissit(par: Option[String]=None) = this
   def linkekFrissit = this
   def kattintanivalokFrissit = this
 }
@@ -93,7 +93,7 @@ object Lap
     par("frissitendo") match
     {
       case "html" => lap.htmlFrissit
-      case "kep" => lap.kepFrissit
+      case "kep" => lap.kepFrissit(par.get("par"))
       case "linkek" => lap.linkekFrissit
       case "kattintanivalok" => lap.kattintanivalokFrissit
       case _ => lap
